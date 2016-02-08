@@ -40,6 +40,17 @@ function(req, res) {
   });
 });
 
+app.get('/login', 
+function(req, res) {
+  res.render('login');
+});
+
+app.get('/signup', 
+function(req, res) {
+  res.render('signup');
+});
+
+
 app.post('/links', 
 function(req, res) {
   var uri = req.body.url;
@@ -71,6 +82,36 @@ function(req, res) {
     }
   });
 });
+
+app.post('/signup', 
+function(req, res) {
+  console.log('signup post received');
+  var username = req.body.username;
+  var password = req.body.password;
+
+
+  new User({ username: username, password: password }).query({where: {username: username}}).fetchAll().then(function(model) {
+      console.log('usermodel .............', model);
+      if (model.length) {
+        res.redirect('/signup');
+      } else {
+        console.log('about to create a new user ..............');
+        Users.create({
+          username: username,
+          password: password,
+        })
+        .then(function(newUser) {
+          res.send(200, newUser);
+        });
+      }
+  });
+
+
+});
+
+//.query({where: {username: username}})
+
+
 
 /************************************************************/
 // Write your authentication routes here

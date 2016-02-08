@@ -12,6 +12,13 @@ var User = db.Model.extend({
   hasTimestamps: true,
   links: function() {
     return this.hasMany(Link);
+  },
+  initialize: function() {
+    this.on('creating', function(model, attrs, options) {
+      var hash = bcrypt.hashSync(model.get('password'));
+      model.set('password', hash);
+      // model.set('code', shasum.digest('hex').slice(0, 5));
+    });
   }
 });
 
