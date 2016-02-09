@@ -41,16 +41,16 @@ var checkAuth = function(req, res, next) {
   console.log('req session ', req.session);
   console.log('Id ...........', req.session.userId);
   if (!req.session.userId) {
-    res.redirect('login');
+    res.redirect('/login');
   } else {
     next();
   }
 };
 
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
 });
 
 app.get('/', checkAuth,
