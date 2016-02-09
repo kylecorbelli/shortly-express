@@ -29,22 +29,29 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-
 app.use(session({
   secret: 'nyan cat',
-  resave: false,
+  resave: true,
   saveUninitialized: true
 }));
 
 var checkAuth = function(req, res, next) {
+  console.log('req method', req.method);
+  console.log('req url ', req.url);
+  console.log('req session ', req.session);
+  console.log('Id ...........', req.session.userId);
   if (!req.session.userId) {
-    res.path
     res.redirect('login');
   } else {
     next();
   }
 };
 
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 app.get('/', checkAuth,
 function(req, res) {
@@ -127,7 +134,9 @@ function(req, res) {
     if (resp[0]) {
       var hashedPass = resp[0].password;
       if (bcrypt.compareSync(password, hashedPass)) {
+        console.log('req.session changed');
         req.session.userId = resp[0].id;
+        req.session.save();
         res.redirect('/');
       } else {
         console.log('wrong password');
@@ -161,7 +170,10 @@ function(req, res) {
       })
       .then(function(newUser) {
         // res.send(200, newUser);
+        console.log('req.session changed 2');
+
         req.session.userId = newUser.id;
+        req.session.save();
         res.redirect('/');
       });
     }
@@ -169,6 +181,20 @@ function(req, res) {
 
 
 });
+
+
+
+app.post('/logout', checkAuth,
+function(req, res) {
+  console.log(' inside here ?');
+  // req.session.userId = 10;
+  // req.session.regenerate();
+  req.session.destroy(function() {
+    res.redirect('/login');
+  });
+  // res.redirect('/login');
+});
+
 
 //.query({where: {username: username}})
 
