@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -15,6 +16,10 @@ var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 
+var currentUser = {
+
+};
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -25,7 +30,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+app.use(session({
+  secret: 'nyan cat',
+  resave: false,
+  saveUninitialized: true
+}));
+
+var checkAuth = function(req, res, next) {
+  if (req.url !== 'login') {
+    if (!req.session.userId) {
+      res.redirect('login');
+    }
+  }
+  next();
+};
+
+
+app.get('/', checkAuth,
 function(req, res) {
   res.render('index');
 });
@@ -35,7 +56,7 @@ function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
@@ -85,42 +106,38 @@ function(req, res) {
   });
 });
 
-app.post('/login', 
+app.post('/login',
 function(req, res) {
   console.log('login post received');
   var username = req.body.username;
   var password = req.body.password;
   var hash = bcrypt.hashSync(password);
+
+
+
+
   //////////////
   var u = Users.query();
   u.where({username: username.trim()}).select().then(function(resp) {
     console.log('resp: ', resp);
-    var hashedPass = resp[0].password;
-    if (bcrypt.compareSync(password, hashedPass)) {
-      res.redirect('index');
+    if (resp[0]) {
+      var hashedPass = resp[0].password;
+      if (bcrypt.compareSync(password, hashedPass)) {
+        req.session.userId = resp[0].id;
+        res.redirect('index');
+      } else {
+        console.log('wrong password');
+        res.redirect('login');
+      }
     } else {
-      console.log('wrong password');
       res.redirect('login');
     }
   });
-  // Users.query({where: {username: username}}).fetchAll().then(function(model) {
-  //   if (model.length) {
-  //     res.redirect('/signup');
-  //   } else {
-  //     Users.create({
-  //       username: username,
-  //       password: password,
-  //     })
-  //     .then(function(newUser) {
-  //       // res.send(200, newUser);
-  //       res.redirect('index');
-  //     });
-  //   }
-  // });
-
-
   ////////////
   
+
+
+
 });
 
 app.post('/signup', 
@@ -140,6 +157,7 @@ function(req, res) {
       })
       .then(function(newUser) {
         // res.send(200, newUser);
+        req.session.userId = newUser.id;
         res.redirect('index');
       });
     }
