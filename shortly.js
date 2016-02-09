@@ -11,6 +11,8 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+var bcrypt = require('bcrypt-nodejs');
+
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -83,6 +85,44 @@ function(req, res) {
   });
 });
 
+app.post('/login', 
+function(req, res) {
+  console.log('login post received');
+  var username = req.body.username;
+  var password = req.body.password;
+  var hash = bcrypt.hashSync(password);
+  //////////////
+  var u = Users.query();
+  u.where({username: username.trim()}).select().then(function(resp) {
+    console.log('resp: ', resp);
+    var hashedPass = resp[0].password;
+    if (bcrypt.compareSync(password, hashedPass)) {
+      res.redirect('index');
+    } else {
+      console.log('wrong password');
+      res.redirect('login');
+    }
+  });
+  // Users.query({where: {username: username}}).fetchAll().then(function(model) {
+  //   if (model.length) {
+  //     res.redirect('/signup');
+  //   } else {
+  //     Users.create({
+  //       username: username,
+  //       password: password,
+  //     })
+  //     .then(function(newUser) {
+  //       // res.send(200, newUser);
+  //       res.redirect('index');
+  //     });
+  //   }
+  // });
+
+
+  ////////////
+  
+});
+
 app.post('/signup', 
 function(req, res) {
   console.log('signup post received');
@@ -90,20 +130,19 @@ function(req, res) {
   var password = req.body.password;
 
 
-  new User({ username: username, password: password }).query({where: {username: username}}).fetchAll().then(function(model) {
-      console.log('usermodel .............', model);
-      if (model.length) {
-        res.redirect('/signup');
-      } else {
-        console.log('about to create a new user ..............');
-        Users.create({
-          username: username,
-          password: password,
-        })
-        .then(function(newUser) {
-          res.send(200, newUser);
-        });
-      }
+  new User({ username: username.trim(), password: password }).query({where: {username: username}}).fetchAll().then(function(model) {
+    if (model.length) {
+      res.redirect('/signup');
+    } else {
+      Users.create({
+        username: username,
+        password: password,
+      })
+      .then(function(newUser) {
+        // res.send(200, newUser);
+        res.redirect('index');
+      });
+    }
   });
 
 
