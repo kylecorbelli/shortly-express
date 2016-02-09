@@ -37,12 +37,12 @@ app.use(session({
 }));
 
 var checkAuth = function(req, res, next) {
-  if (req.url !== 'login') {
-    if (!req.session.userId) {
-      res.redirect('login');
-    }
+  if (!req.session.userId) {
+    res.path
+    res.redirect('login');
+  } else {
+    next();
   }
-  next();
 };
 
 
@@ -51,12 +51,12 @@ function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', checkAuth,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links',
+app.get('/links', checkAuth,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
@@ -73,8 +73,13 @@ function(req, res) {
   res.render('signup');
 });
 
+app.post('/create', checkAuth,
+function(req, res) {
+  res.redirect('links');
+});
 
-app.post('/links', 
+
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -108,7 +113,6 @@ function(req, res) {
 
 app.post('/login',
 function(req, res) {
-  console.log('login post received');
   var username = req.body.username;
   var password = req.body.password;
   var hash = bcrypt.hashSync(password);
@@ -119,18 +123,18 @@ function(req, res) {
   //////////////
   var u = Users.query();
   u.where({username: username.trim()}).select().then(function(resp) {
-    console.log('resp: ', resp);
+    // console.log('resp: ', resp);
     if (resp[0]) {
       var hashedPass = resp[0].password;
       if (bcrypt.compareSync(password, hashedPass)) {
         req.session.userId = resp[0].id;
-        res.redirect('index');
+        res.redirect('/');
       } else {
         console.log('wrong password');
-        res.redirect('login');
+        res.redirect('/login');
       }
     } else {
-      res.redirect('login');
+      res.redirect('/login');
     }
   });
   ////////////
@@ -158,7 +162,7 @@ function(req, res) {
       .then(function(newUser) {
         // res.send(200, newUser);
         req.session.userId = newUser.id;
-        res.redirect('index');
+        res.redirect('/');
       });
     }
   });
